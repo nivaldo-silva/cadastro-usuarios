@@ -36,3 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 
+# Chaves de criptografia
+src/main/resources/keys/
