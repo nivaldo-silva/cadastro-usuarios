@@ -1,20 +1,11 @@
 package io.github.nivaldosilva.cadastro_usuarios.service;
 
-import io.github.nivaldosilva.cadastro_usuarios.controllers.request.EnderecoRequest;
-import io.github.nivaldosilva.cadastro_usuarios.controllers.request.TelefoneRequest;
-import io.github.nivaldosilva.cadastro_usuarios.controllers.request.RegistroUsuarioRequest;
-import io.github.nivaldosilva.cadastro_usuarios.controllers.response.EnderecoResponse;
-import io.github.nivaldosilva.cadastro_usuarios.controllers.response.TelefoneResponse;
-import io.github.nivaldosilva.cadastro_usuarios.controllers.response.UsuarioResponse;
 import io.github.nivaldosilva.cadastro_usuarios.entities.Endereco;
 import io.github.nivaldosilva.cadastro_usuarios.entities.Telefone;
 import io.github.nivaldosilva.cadastro_usuarios.entities.Usuario;
 import io.github.nivaldosilva.cadastro_usuarios.enums.Role;
 import io.github.nivaldosilva.cadastro_usuarios.exceptions.EmailJaCadastradoException;
 import io.github.nivaldosilva.cadastro_usuarios.exceptions.UsuarioNaoEncontradoException;
-import io.github.nivaldosilva.cadastro_usuarios.mappers.EnderecoMapper;
-import io.github.nivaldosilva.cadastro_usuarios.mappers.TelefoneMapper;
-import io.github.nivaldosilva.cadastro_usuarios.mappers.UsuarioMapper;
 import io.github.nivaldosilva.cadastro_usuarios.repository.EnderecoRepository;
 import io.github.nivaldosilva.cadastro_usuarios.repository.TelefoneRepository;
 import io.github.nivaldosilva.cadastro_usuarios.repository.UsuarioRepository;
@@ -38,98 +29,81 @@ public class UsuarioService {
     private final TelefoneRepository telefoneRepository;
 
     @Transactional
-    public UsuarioResponse registrarUsuario(RegistroUsuarioRequest request) {
-        validarEmailUnico(request.email());
+    public Usuario registrarUsuario(Usuario usuario) {
+        validarEmailUnico(usuario.getEmail());
 
-        Usuario usuario = Usuario.builder()
-                .nome(request.nome())
-                .email(request.email())
-                .senha(passwordEncoder.encode(request.senha()))
-                .roles(Set.of(Role.USUARIO))
-                .ativo(true)
-                .build();
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        usuario.setRoles(Set.of(Role.USUARIO));
+        usuario.setAtivo(true);
 
         Usuario salvo = usuarioRepository.save(usuario);
         log.info("Usuário registrado: {}", salvo.getEmail());
 
-        return UsuarioMapper.toResponse(salvo);
+        return salvo;
     }
 
     @Transactional
-    public UsuarioResponse criarAdmin(RegistroUsuarioRequest request) {
-        validarEmailUnico(request.email());
+    public Usuario criarAdmin(Usuario usuario) {
+        validarEmailUnico(usuario.getEmail());
 
-        Usuario usuario = Usuario.builder()
-                .nome(request.nome())
-                .email(request.email())
-                .senha(passwordEncoder.encode(request.senha()))
-                .roles(Set.of(Role.ADMIN, Role.USUARIO))
-                .ativo(true)
-                .build();
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        usuario.setRoles(Set.of(Role.ADMIN, Role.USUARIO));
+        usuario.setAtivo(true);
 
         Usuario salvo = usuarioRepository.save(usuario);
         log.info("Administrador criado: {}", salvo.getEmail());
 
-        return UsuarioMapper.toResponse(salvo);
+        return salvo;
     }
 
     @Transactional(readOnly = true)
-    public List<UsuarioResponse> listarTodos() {
-        return usuarioRepository.findAll()
-                .stream()
-                .map(UsuarioMapper::toResponse)
-                .toList();
+    public List<Usuario> listarTodos() {
+        return usuarioRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    public UsuarioResponse buscarPorEmail(String email) {
-        Usuario usuario = usuarioRepository.findByEmail(email)
+    public Usuario buscarPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado"));
-        return UsuarioMapper.toResponse(usuario);
     }
 
     @Transactional
-    public UsuarioResponse atualizarPerfil(String emailAutenticado, RegistroUsuarioRequest request) {
+    public Usuario atualizarPerfil(String emailAutenticado, Usuario usuarioAtualizado) {
         Usuario usuario = usuarioRepository.findByEmail(emailAutenticado)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado"));
 
-        if (!usuario.getEmail().equals(request.email())) {
-            validarEmailUnico(request.email());
-            usuario.setEmail(request.email());
+        if (!usuario.getEmail().equals(usuarioAtualizado.getEmail())) {
+            validarEmailUnico(usuarioAtualizado.getEmail());
+            usuario.setEmail(usuarioAtualizado.getEmail());
         }
 
-        usuario.setNome(request.nome());
+        usuario.setNome(usuarioAtualizado.getNome());
 
-        if (request.senha() != null && !request.senha().isBlank()) {
-            usuario.setSenha(passwordEncoder.encode(request.senha()));
+        if (usuarioAtualizado.getSenha() != null && !usuarioAtualizado.getSenha().isBlank()) {
+            usuario.setSenha(passwordEncoder.encode(usuarioAtualizado.getSenha()));
         }
 
-        Usuario atualizado = usuarioRepository.save(usuario);
-        return UsuarioMapper.toResponse(atualizado);
+        return usuarioRepository.save(usuario);
     }
 
     @Transactional
-    public EnderecoResponse cadastrarEndereco(String userEmail, EnderecoRequest request) {
+    public Endereco cadastrarEndereco(String userEmail, Endereco endereco) {
         Usuario usuario = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado"));
 
-        Endereco endereco = EnderecoMapper.toEntity(request);
         endereco.setUsuario(usuario);
 
-        Endereco salvo = enderecoRepository.save(endereco);
-        return EnderecoMapper.toResponse(salvo);
+        return enderecoRepository.save(endereco);
     }
 
     @Transactional
-    public TelefoneResponse cadastrarTelefone(String userEmail, TelefoneRequest request) {
+    public Telefone cadastrarTelefone(String userEmail, Telefone telefone) {
         Usuario usuario = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado"));
 
-        Telefone telefone = TelefoneMapper.toEntity(request);
         telefone.setUsuario(usuario);
 
-        Telefone salvo = telefoneRepository.save(telefone);
-        return TelefoneMapper.toResponse(salvo);
+        return telefoneRepository.save(telefone);
     }
 
     @Transactional
@@ -142,7 +116,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public EnderecoResponse atualizarEndereco(String userEmail, UUID enderecoId, EnderecoRequest request) {
+    public Endereco atualizarEndereco(String userEmail, UUID enderecoId, Endereco enderecoAtualizado) {
         Usuario usuario = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado"));
 
@@ -153,21 +127,21 @@ public class UsuarioService {
             throw new RuntimeException("Você só pode atualizar seus próprios endereços");
         }
 
-        endereco.setRua(request.rua());
-        endereco.setNumero(request.numero());
-        endereco.setComplemento(request.complemento());
-        endereco.setCidade(request.cidade());
-        endereco.setEstado(request.estado());
-        endereco.setCep(request.cep());
+        endereco.setRua(enderecoAtualizado.getRua());
+        endereco.setNumero(enderecoAtualizado.getNumero());
+        endereco.setComplemento(enderecoAtualizado.getComplemento());
+        endereco.setCidade(enderecoAtualizado.getCidade());
+        endereco.setEstado(enderecoAtualizado.getEstado());
+        endereco.setCep(enderecoAtualizado.getCep());
 
         Endereco atualizado = enderecoRepository.save(endereco);
         log.info("Endereço {} atualizado por {}", enderecoId, userEmail);
 
-        return EnderecoMapper.toResponse(atualizado);
+        return atualizado;
     }
 
     @Transactional
-    public TelefoneResponse atualizarTelefone(String userEmail, UUID telefoneId, TelefoneRequest request) {
+    public Telefone atualizarTelefone(String userEmail, UUID telefoneId, Telefone telefoneAtualizado) {
         Usuario usuario = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado"));
 
@@ -178,13 +152,13 @@ public class UsuarioService {
             throw new RuntimeException("Você só pode atualizar seus próprios telefones");
         }
 
-        telefone.setNumero(request.numero());
-        telefone.setDdd(request.ddd());
+        telefone.setNumero(telefoneAtualizado.getNumero());
+        telefone.setDdd(telefoneAtualizado.getDdd());
 
         Telefone atualizado = telefoneRepository.save(telefone);
         log.info("Telefone {} atualizado por {}", telefoneId, userEmail);
 
-        return TelefoneMapper.toResponse(atualizado);
+        return atualizado;
     }
 
     private boolean isAdmin(String email) {

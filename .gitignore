@@ -38,3 +38,7 @@ out/
 
 # Chaves de criptografia
 src/main/resources/keys/
+
+# JVM Crash logs
+hs_err_pid*.log
+replay_pid*.log

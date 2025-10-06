@@ -6,6 +6,12 @@ import io.github.nivaldosilva.cadastro_usuarios.controllers.request.RegistroUsua
 import io.github.nivaldosilva.cadastro_usuarios.controllers.response.EnderecoResponse;
 import io.github.nivaldosilva.cadastro_usuarios.controllers.response.TelefoneResponse;
 import io.github.nivaldosilva.cadastro_usuarios.controllers.response.UsuarioResponse;
+import io.github.nivaldosilva.cadastro_usuarios.entities.Endereco;
+import io.github.nivaldosilva.cadastro_usuarios.entities.Telefone;
+import io.github.nivaldosilva.cadastro_usuarios.entities.Usuario;
+import io.github.nivaldosilva.cadastro_usuarios.mappers.EnderecoMapper;
+import io.github.nivaldosilva.cadastro_usuarios.mappers.TelefoneMapper;
+import io.github.nivaldosilva.cadastro_usuarios.mappers.UsuarioMapper;
 import io.github.nivaldosilva.cadastro_usuarios.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,8 +23,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/usuarios")
@@ -33,15 +41,20 @@ public class UsuarioController {
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @Operation(summary = "Listar usuários")
     public ResponseEntity<List<UsuarioResponse>> listar() {
-        return ResponseEntity.ok(usuarioService.listarTodos());
+        List<Usuario> usuarios = usuarioService.listarTodos();
+        List<UsuarioResponse> response = usuarios.stream()
+                .map(UsuarioMapper::toResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/admin")
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     @Operation(summary = "Criar administrador")
     public ResponseEntity<UsuarioResponse> criarAdmin(@RequestBody @Valid RegistroUsuarioRequest request) {
-        UsuarioResponse usuario = usuarioService.criarAdmin(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuario);
+        Usuario usuario = UsuarioMapper.toEntity(request);
+        Usuario novoUsuario = usuarioService.criarAdmin(usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UsuarioMapper.toResponse(novoUsuario));
     }
 
     @DeleteMapping("/{id}")
@@ -57,7 +70,8 @@ public class UsuarioController {
     @Operation(summary = "Ver perfil")
     public ResponseEntity<UsuarioResponse> verPerfil() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(usuarioService.buscarPorEmail(email));
+        Usuario usuario = usuarioService.buscarPorEmail(email);
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuario));
     }
 
     @PutMapping("/perfil")
@@ -65,7 +79,9 @@ public class UsuarioController {
     @Operation(summary = "Atualizar perfil")
     public ResponseEntity<UsuarioResponse> atualizarPerfil(@RequestBody @Valid RegistroUsuarioRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(usuarioService.atualizarPerfil(email, request));
+        Usuario usuario = UsuarioMapper.toEntity(request);
+        Usuario usuarioAtualizado = usuarioService.atualizarPerfil(email, usuario);
+        return ResponseEntity.ok(UsuarioMapper.toResponse(usuarioAtualizado));
     }
 
     @PostMapping("/endereco")
@@ -73,8 +89,9 @@ public class UsuarioController {
     @Operation(summary = "Cadastrar endereço")
     public ResponseEntity<EnderecoResponse> cadastrarEndereco(@RequestBody @Valid EnderecoRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        EnderecoResponse endereco = usuarioService.cadastrarEndereco(email, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(endereco);
+        Endereco endereco = EnderecoMapper.toEntity(request);
+        Endereco novoEndereco = usuarioService.cadastrarEndereco(email, endereco);
+        return ResponseEntity.status(HttpStatus.CREATED).body(EnderecoMapper.toResponse(novoEndereco));
     }
 
     @PostMapping("/telefone")
@@ -82,8 +99,9 @@ public class UsuarioController {
     @Operation(summary = "Cadastrar telefone")
     public ResponseEntity<TelefoneResponse> cadastrarTelefone(@RequestBody @Valid TelefoneRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        TelefoneResponse telefone = usuarioService.cadastrarTelefone(email, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(telefone);
+        Telefone telefone = TelefoneMapper.toEntity(request);
+        Telefone novoTelefone = usuarioService.cadastrarTelefone(email, telefone);
+        return ResponseEntity.status(HttpStatus.CREATED).body(TelefoneMapper.toResponse(novoTelefone));
     }
 
     @PutMapping("/endereco/{id}")
@@ -93,8 +111,9 @@ public class UsuarioController {
             @PathVariable UUID id,
             @RequestBody @Valid EnderecoRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        EnderecoResponse endereco = usuarioService.atualizarEndereco(email, id, request);
-        return ResponseEntity.ok(endereco);
+        Endereco endereco = EnderecoMapper.toEntity(request);
+        Endereco enderecoAtualizado = usuarioService.atualizarEndereco(email, id, endereco);
+        return ResponseEntity.ok(EnderecoMapper.toResponse(enderecoAtualizado));
     }
 
     @PutMapping("/telefone/{id}")
@@ -104,7 +123,8 @@ public class UsuarioController {
             @PathVariable UUID id,
             @RequestBody @Valid TelefoneRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        TelefoneResponse telefone = usuarioService.atualizarTelefone(email, id, request);
-        return ResponseEntity.ok(telefone);
+        Telefone telefone = TelefoneMapper.toEntity(request);
+        Telefone telefoneAtualizado = usuarioService.atualizarTelefone(email, id, telefone);
+        return ResponseEntity.ok(TelefoneMapper.toResponse(telefoneAtualizado));
     }
 }

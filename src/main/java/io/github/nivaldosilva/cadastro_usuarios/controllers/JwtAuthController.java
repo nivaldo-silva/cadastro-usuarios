@@ -5,6 +5,8 @@ import io.github.nivaldosilva.cadastro_usuarios.controllers.request.RefreshToken
 import io.github.nivaldosilva.cadastro_usuarios.controllers.request.RegistroUsuarioRequest;
 import io.github.nivaldosilva.cadastro_usuarios.controllers.response.LoginResponse;
 import io.github.nivaldosilva.cadastro_usuarios.controllers.response.UsuarioResponse;
+import io.github.nivaldosilva.cadastro_usuarios.entities.Usuario;
+import io.github.nivaldosilva.cadastro_usuarios.mappers.UsuarioMapper;
 import io.github.nivaldosilva.cadastro_usuarios.security.JwtAuthenticationService;
 import io.github.nivaldosilva.cadastro_usuarios.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +39,9 @@ public class JwtAuthController {
     @PostMapping("/registro")
     @Operation(summary = "Registrar usuário comum")
     public ResponseEntity<UsuarioResponse> registro(@RequestBody @Valid RegistroUsuarioRequest request) {
-        UsuarioResponse response = usuarioService.registrarUsuario(request);
+        Usuario usuario = UsuarioMapper.toEntity(request);
+        Usuario novoUsuario = usuarioService.registrarUsuario(usuario);
+        UsuarioResponse response = UsuarioMapper.toResponse(novoUsuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
