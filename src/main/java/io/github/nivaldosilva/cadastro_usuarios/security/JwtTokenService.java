@@ -47,7 +47,7 @@ public class JwtTokenService {
     }
 
     public LoginResponse generateAccessToken(Authentication authentication) {
-        log.debug("Gerando novo access token para usuÃ¡rio: {}", authentication.getName());
+        log.debug("Gerando novo access token para usuario: {}", authentication.getName());
 
         String accessToken = generateAccessTokenString(authentication);
 

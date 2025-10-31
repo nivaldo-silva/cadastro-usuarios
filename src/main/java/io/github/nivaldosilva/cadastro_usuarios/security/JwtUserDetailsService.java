@@ -18,18 +18,17 @@ public class JwtUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        log.debug("Carregando usuÃ¡rio por email: {}", email);
+        log.debug("Carregando usuario por email: {}", email);
         
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> {
-                    log.warn("Tentativa de login com email nÃ£o encontrado: {}", email);
-                    return new UsernameNotFoundException("UsuÃ¡rio nÃ£o encontrado: " + email);
+                    log.warn("Tentativa de login com email nao encontrado: {}", email);
+                    return new UsernameNotFoundException("Usuario nao encontrado: " + email);
                 });
 
-        log.debug("UsuÃ¡rio encontrado: {} com roles: {}", usuario.getEmail(), usuario.getRoles());
+        log.debug("Usuario encontrado: {} com roles: {}", usuario.getEmail(), usuario.getRoles());
 
-        // Retorna o prÃ³prio Usuario que jÃ¡ implementa UserDetails
-        // Isso mantÃ©m todas as informaÃ§Ãµes do usuÃ¡rio disponÃ­veis no contexto de seguranÃ§a
+       
         return usuario;
     }
 }
