@@ -31,7 +31,7 @@ public class JwtTokenService {
     private String jwtIssuer;
 
     public LoginResponse generateTokens(Authentication authentication) {
-        log.debug("Gerando tokens para usuÃ¡rio: {}", authentication.getName());
+        log.debug("Gerando tokens para usuario: {}", authentication.getName());
 
         String accessToken = generateAccessTokenString(authentication);
         String refreshToken = generateRefreshTokenString(authentication);
