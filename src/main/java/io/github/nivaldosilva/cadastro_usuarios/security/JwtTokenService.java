@@ -63,7 +63,8 @@ public class JwtTokenService {
         var expiresAt = now.plusSeconds(jwtExpirationSeconds);
 
         String scope = authentication.getAuthorities().stream()
-                .map(authority -> authority.getAuthority().replace("ROLE_", ""))
+                .map(authority ->
+						authority.getAuthority().replace("ROLE_", ""))
                 .collect(Collectors.joining(" "));
 
         String userId = null;
