@@ -5,8 +5,9 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import java.util.List;
@@ -17,54 +18,71 @@ import java.util.List;
 		type = SecuritySchemeType.HTTP,
 		scheme = "bearer",
 		bearerFormat = "JWT",
-		description = "Autenticação JWT. Obtenha o token através do endpoint /auth/login e inclua no header: Authorization: Bearer {token}"
+		description = "🔑 Insira o token obtido via POST /auth/login no formato: Bearer {token}"
 )
 public class OpenAPIConfig {
 
+	@Value("${server.port:8082}")
+	private String serverPort;
+
 	@Bean
 	public OpenAPI customOpenAPI() {
+		return new OpenAPI()
+				.info(buildInfo())
+				.servers(buildServers())
+				.tags(buildTags());
+	}
 
-		Contact contact = new Contact()
-				.email("nivaldosilva.contato@gmail.com")
-				.name("Nivaldo Silva")
-				.url("https://github.com/Nivaldo-Silva");
-
-		License license = new License()
-				.name("Apache 2.0")
-				.url("https://www.apache.org/licenses/LICENSE-2.0.html");
-
-		Info info = new Info()
-				.title("Cadastro de Usuários API")
+	private Info buildInfo() {
+		return new Info()
+				.title("🔐 Cadastro de Usuários API")
 				.version("v1.0.0")
 				.description("""
-                        API REST para gerenciamento completo de cadastro de usuários com autenticação JWT.
+                        API RESTful para gerenciamento de usuários com autenticação stateless via **JWT (RS256)**.
 
-                        ## Autenticação
-                        Esta API utiliza autenticação JWT com chaves RSA (RS256). Para autenticar:
-                        1. Registre-se através do endpoint `POST /auth/registro`
-                        2. Faça login através do endpoint `POST /auth/login`
-                        3. Use o `accessToken` retornado no header `Authorization: Bearer {token}`
-                        4. Quando o token expirar, renove via `POST /auth/refresh-token`
-
-                        ## Funcionalidades
+                        ## ⚙️ Funcionalidades
                         - **Autenticação**: Registro, login e renovação de token JWT
-                        - **Usuários**: Listagem, criação de admins, atualização de perfil e exclusão
-                        - **Endereços**: Cadastro e atualização de endereços vinculados ao usuário
-                        - **Telefones**: Cadastro e atualização de telefones vinculados ao usuário
+                        - **Usuários**: CRUD completo com controle de perfil e roles
+                        - **Endereços**: Cadastro e atualização vinculados ao usuário
+                        - **Telefones**: Cadastro e atualização vinculados ao usuário
 
-                        ## Perfis de Acesso
-                        - **USUARIO**: Acesso ao próprio perfil, endereços e telefones
-                        - **ADMIN**: Acesso completo, incluindo listagem e exclusão de qualquer usuário
+                        ## 🛡️ Segurança
+                        - Autenticação stateless com **JWT assinado via RSA (RS256)**
+                        - Controle de acesso baseado em roles com **Spring Security**
+                        - Senhas criptografadas com **BCrypt (strength 12)**
+                        - Refresh token para renovação segura de sessão
+
+                        ## 🔑 Como Autenticar
+                        1. `POST /auth/registro` — crie sua conta
+                        2. `POST /auth/login` — obtenha o `accessToken`
+                        3. Clique em **Authorize 🔓** e insira `Bearer {token}`
+                        4. `POST /auth/refresh-token` — renove quando expirar
+                        
                         """)
-				.contact(contact)
-				.license(license);
+				.contact(new Contact()
+						.name("Nivaldo Silva")
+						.url("https://github.com/Nivaldo-Silva")
+						.email("nivaldosilva.contato@gmail.com"));
 
-		Server localServer = new Server()
-				.url("http://localhost:8082")
-				.description("Servidor de Desenvolvimento Local");
+	}
 
-		return new OpenAPI()
-				.info(info)
-				.servers(List.of(localServer));
+	private List<Server> buildServers() {
+		return List.of(
+				new Server()
+						.url("http://localhost:" + serverPort)
+						.description("Ambiente de desenvolvimento local"),
+				new Server()
+						.url("https://api.nivaldosilva.io")
+						.description("Ambiente de produção")
+		);
+	}
+
+	private List<Tag> buildTags() {
+		return List.of(
+				new Tag().name("Autenticação").description("🔐 Registro, login e renovação de token JWT"),
+				new Tag().name("Usuários").description("👤 Gerenciamento de usuários e perfis"),
+				new Tag().name("Endereços").description("📍 Cadastro e atualização de endereços"),
+				new Tag().name("Telefones").description("📞 Cadastro e atualização de telefones")
+		);
 	}
 }
